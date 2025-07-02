@@ -1,0 +1,83 @@
+version: "3.9"
+
+services:
+  # ──────────────────────────────
+  # FastAPI application container
+  # ──────────────────────────────
+  api:
+    build: .
+    env_file: .env                        # loads DATABASE_URL + other secrets
+    depends_on:
+      - redis
+      - chroma
+    volumes:
+      - ./:/app                           # live‑reload in dev
+      - ./certs:/app/certs:ro             # CA‑cert for Aiven (read‑only)
+    ports:
+      - "8000:8000"
+    command: >
+      sh -c "uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+
+  # ──────────────────────────────
+  # Celery worker (background jobs)
+  # ──────────────────────────────
+  worker:
+    build: .
+    env_file: .env
+    depends_on:
+      - redis
+      - api
+    volumes:
+      - ./:/app
+      - ./certs:/app/certs:ro             # same cert mount
+    command: celery -A app.core.celery_app worker --loglevel=info
+
+  # ──────────────────────────────
+  # Redis (cache & Celery broker)
+  # ──────────────────────────────
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  # ──────────────────────────────
+  # ChromaDB (vector store)
+  # ──────────────────────────────
+  chroma:
+    image: chromadb/chroma:latest
+    ports:
+      - "8001:8000"
+
+  # ──────────────────────────────
+  # MinIO (S3‑compatible storage)
+  # ──────────────────────────────
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minio}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-miniopass}
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # Admin console
+
+  # ──────────────────────────────
+  # (Optional) Local Postgres + pgvector
+  # ──────────────────────────────
+  # Uncomment this block if you ever want a dev database container again.
+  # db:
+  #   image: ankane/pgvector:latest
+  #   environment:
+  #     POSTGRES_USER: spaces
+  #     POSTGRES_PASSWORD: spacespass
+  #     POSTGRES_DB: spaces_db
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - pgdata:/var/lib/postgresql/data
+
+volumes:
+  minio_data:
+  # pgdata:  # only needed if the db service is enabled
