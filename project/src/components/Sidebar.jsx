@@ -42,9 +42,7 @@ export default function Sidebar() {
       {/* Logo */}
       <div className="p-6 border-b border-slate-200/60">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-violet-600 rounded-lg flex items-center justify-center">
-            
-          </div>
+          
           <span className="font-bold text-lg tracking-tight"><img className ="h-10" src="https://res.cloudinary.com/dy1txrjmy/image/upload/v1751370780/tutorwisespaces_bpbt1o.png" alt="" /></span>
         </div>
       </div>
