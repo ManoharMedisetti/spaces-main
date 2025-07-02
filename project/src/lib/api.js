@@ -1,6 +1,5 @@
 const baseURL =
-  import.meta.env.VITE_API_BASE ||
-  (import.meta.env.DEV ? 'http://localhost:8000' : '/api');
+  "https://13.201.91.4:8000";
 
 class ApiError extends Error {
   constructor(message, status, data) {
