@@ -113,3 +113,4 @@ wcwidth
 websocket-client
 websockets
 zipp
+sentence-transformers
