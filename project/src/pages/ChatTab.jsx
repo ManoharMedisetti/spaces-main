@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Send, ChevronRight, FileText, User, Bot, X, CornerDownLeft, Zap } from 'lucide-react';
 import { useOutletContext } from 'react-router-dom';
 import { useAuthStore } from '../store/auth';
+import { useChatStore } from '../store/chat';
 import { api } from '../api';
 import Toast from '../components/Toast';
 import ReactMarkdown from 'react-markdown';
@@ -219,6 +220,7 @@ function ChatInput({ onSendMessage, disabled }) {
 export default function ChatTab() {
   const { space } = useOutletContext();
   const { user_id } = useAuthStore();
+  const { getChatHistory, addMessage, updateLastMessage } = useChatStore();
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [contextDrawer, setContextDrawer] = useState({ isOpen: false, context: null });
@@ -237,13 +239,23 @@ export default function ChatTab() {
     scrollToBottom();
   }, [messages]);
 
+  // Load chat history when space changes
+  useEffect(() => {
+    if (space?.id) {
+      const history = getChatHistory(space.id);
+      setMessages(history);
+    }
+  }, [space?.id, getChatHistory]);
+
   const handleSendMessage = async (message) => {
     const userMessage = { role: 'user', content: message };
-    setMessages(prev => [...prev, userMessage]);
+    const newMessages = [...messages, userMessage];
+    setMessages(newMessages);
+    addMessage(space.id, userMessage);
     setLoading(true);
 
     try {
-      const history = [...messages, userMessage].slice(-6);
+      const history = newMessages.slice(-6);
       
       const response = await api.sendMessage({
         user_id,
@@ -262,6 +274,7 @@ export default function ChatTab() {
       };
 
       setMessages(prev => [...prev, assistantMessage]);
+      addMessage(space.id, assistantMessage);
     } catch (error) {
       showToast('error', 'Failed to send message. Please try again.');
       setMessages(prev => prev.slice(0, -1));
