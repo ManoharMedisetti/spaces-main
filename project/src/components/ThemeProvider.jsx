@@ -6,9 +6,11 @@ export default function ThemeProvider({ children }) {
 
   useEffect(() => {
     if (isDark) {
-      document.documentElement.classList.add('dark');
+      document.body.classList.remove('light');
+      document.body.classList.add('dark');
     } else {
-      document.documentElement.classList.remove('dark');
+      document.body.classList.remove('dark');
+      document.body.classList.add('light');
     }
   }, [isDark]);
 
